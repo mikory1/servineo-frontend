@@ -8,28 +8,11 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "drive.google.com",
-        pathname: "/**",
+        hostname: "**",
       },
       {
-        protocol: "https",
-        hostname: "picsum.photos",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
-        hostname: "ejemplo.com",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
-        hostname: "img.youtube.com",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
-        hostname: "placehold.co",
-        pathname: "/**",
+        protocol: "http",
+        hostname: "**",
       },
     ],
   },
