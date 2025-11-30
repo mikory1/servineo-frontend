@@ -8,7 +8,7 @@ export const initialRegistrationSchema = z.object({
   name: z
     .string()
     .min(3, "El nombre debe tener al menos 3 caracteres")
-    .max(30, "El nombre no puede tener más de 30 caracteres")
+    .max(40, "El nombre no puede tener más de 30 caracteres")
     .regex(nameRegex, "El nombre solo puede contener letras y espacios")
     .transform(value => value.trim()),
   email: z
@@ -18,10 +18,14 @@ export const initialRegistrationSchema = z.object({
   phone: z
     .string()
     .regex(phoneRegex, "Formato de teléfono inválido. Debe incluir al menos 8 dígitos")
+    .refine((value) => {
+      // Contar solo los dígitos (excluyendo +, - y espacios)
+      const digitCount = value.replace(/\D/g, '').length
+      return digitCount <= 12
+    }, "El número de teléfono no puede tener más de 10 dígitos")
     .transform(value => value.trim()),
 })
 
-// Schema para CI
 export const ciSchema = z.object({
   ci: z
     .string()
@@ -33,6 +37,9 @@ export const ciSchema = z.object({
 export const locationSchema = z.object({
   lat: z.number().min(-90).max(90),
   lng: z.number().min(-180).max(180),
+  direccion: z.string().optional(),
+  departamento: z.string().optional(),
+  pais: z.string().optional(),
 })
 
 // Schema para servicios
@@ -56,17 +63,13 @@ export const paymentStepSchema = z.object({
 
 // Schema para experiencias
 export const experienceSchema = z.object({
-  id: z.string(),
-  title: z.string().min(3, "El título debe tener al menos 3 caracteres").max(100, "Máximo 100 caracteres"),
-  description: z.string().max(500, "Máximo 500 caracteres").optional(),
-  mediaUrl: z.string().url("URL inválida"),
-  mediaType: z.enum(["image", "video"]),
+  descripcion: z.string().max(500, "Máximo 500 caracteres").optional(),
 })
 
 // Schema para vehículo
 export const vehicleSchema = z.object({
-  hasVehicle: z.boolean(),
-  vehicleType: z.enum(["motorcycle", "car", "van", "truck"]).optional(),
+  hasVehiculo: z.boolean(),
+  tipoVehiculo: z.enum(["motorcycle", "car", "van", "truck"]).optional(),
 })
 
 // Schema para términos
@@ -79,23 +82,32 @@ export const profilePhotoSchema = z.object({
   photoUrl: z.string().url("URL de foto inválida").optional(),
 })
 
-// Schema completo del perfil de FIXER
+// Schema completo del perfil de FIXER alineado con IUser
 export const fixerProfileSchema = z
   .object({
     ci: z.string().regex(/^[0-9-]+$/, "CI debe contener solo números y guiones"),
-    location: locationSchema,
-    selectedServiceIds: z.array(z.string()).min(1),
-    payments: z.array(paymentMethodSchema).min(1),
-    accountInfo: z.string().optional(),
-    experiences: z.array(experienceSchema),
-    hasVehicle: z.boolean(),
-    vehicleType: z.enum(["motorcycle", "car", "van", "truck"]).optional(),
-    termsAccepted: z.boolean(),
-    photoUrl: z.string().url().optional(),
+    workLocation: locationSchema,
+    servicios: z.array(z.string()).min(1, "Seleccione al menos un servicio"),
+    metodoPago: z.object({
+      hasEfectivo: z.boolean().optional(),
+      qr: z.boolean().optional(),
+      tarjetaCredito: z.boolean().optional(),
+    }),
+    vehiculo: z.object({
+      hasVehiculo: z.boolean(),
+      tipoVehiculo: z.string().optional(),
+    }),
+    experience: z.object({
+      descripcion: z.string().optional(),
+    }),
+    acceptTerms: z.boolean(),
+    url_photo: z.string().url().optional(),
+    // Campos auxiliares para el formulario que no van directo al modelo pero ayudan a validar
+    accountInfo: z.string().optional(), // Para QR/Tarjeta
   })
   .refine(
     (data) => {
-      const needsAccount = data.payments.includes("qr") || data.payments.includes("card")
+      const needsAccount = data.metodoPago.qr || data.metodoPago.tarjetaCredito
       return !needsAccount || (data.accountInfo && data.accountInfo.trim().length > 0)
     },
     {
@@ -105,11 +117,11 @@ export const fixerProfileSchema = z
   )
   .refine(
     (data) => {
-      return !data.hasVehicle || data.vehicleType
+      return !data.vehiculo.hasVehiculo || data.vehiculo.tipoVehiculo
     },
     {
       message: "Debe seleccionar el tipo de vehículo",
-      path: ["vehicleType"],
+      path: ["vehiculo", "tipoVehiculo"],
     },
   )
 

@@ -1,11 +1,8 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { IUser } from '@/types/user';
 
 interface UserState {
-  user: {
-    id?: string;
-    name?: string;
-    email?: string;
-  } | null;
+  user: IUser | null;
   isAuthenticated: boolean;
   loading: boolean;
 }
@@ -31,6 +28,7 @@ export const userSlice = createSlice({
       state.user = null;
       state.isAuthenticated = false;
     },
+
   },
 });
 
